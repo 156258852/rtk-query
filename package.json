@@ -1,0 +1,17 @@
+{
+  "name": "rtk-query-fullstack",
+  "version": "1.0.0",
+  "description": "A fullstack project with Vite + TS + React + RTK Query and Express backend",
+  "scripts": {
+    "dev": "concurrently \"pnpm run server\" \"pnpm run client\"",
+    "server": "cd server && pnpm run dev",
+    "client": "cd client && pnpm run dev",
+    "build": "cd client && pnpm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
