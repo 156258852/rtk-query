@@ -1,32 +1,38 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
   useGetPostsQuery,
   useCreatePostMutation,
-  useLazyGetPostQuery,
+  useDeletePostMutation,
   selectPosts,
 } from '../../app/services/posts'
 import type { Post } from '../../app/services/posts'
-import { useDeletePostMutation } from '../../app/services/otherPosts'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import type { RootState } from '../../app/store'
+import Child from './Child'
 
 const PostsManager = () => {
-  const { data: posts, isLoading, refetch, isError ,currentData} = useGetPostsQuery(undefined, {
-    // skip: true,
-    refetchOnMountOrArgChange: 5000,
+  // 只保留一个 useGetPostsQuery 调用，并设置不缓存
+  const { data: posts, isLoading, refetch, isError } = useGetPostsQuery(undefined, {
+    refetchOnMountOrArgChange: true, // 每次挂载时都重新获取数据
+    // selectFromResult: res=>{
+    //   console.log('🚀 >>> res',res)
+    //   return {
+    //     data: res.data
+    //   }
+    // },
   })
-  useLazyGetPostQuery({
-  
-  })
+  const { data: postData } = useSelector(selectPosts)
+  console.log('🚀 >>> postData',postData)
 
-  const testPost = useSelector(selectPosts)
-  console.log(testPost)
 
-  
   const [createPost] = useCreatePostMutation()
   const [deletePost] = useDeletePostMutation()
 
-  const [newPost, setNewPost] = useState({ title: '', content: '', userId: 1 })
-  const [editPost, setEditPost] = useState<Partial<Post> & { id: number } | null>(null)
+  const [newPost, setNewPost] = React.useState({ title: '', content: '', userId: 1 })
+  const [editPost, setEditPost] = React.useState<Partial<Post> & { id: number } | null>(null)
+  // 从 Redux store 中获取 counter 状态
+  const counter = useSelector((state: RootState) => state.counter)
+  const dispatch = useDispatch()
 
   const handleCreatePost = async () => {
     try {
@@ -55,6 +61,15 @@ const PostsManager = () => {
   return (
     <div>
       <h2>Posts Manager</h2>
+
+      <Child />
+      
+      {/* 用于测试持久化的计数器 */}
+      <div>
+        <h3>Counter (for testing persistence): {counter}</h3>
+        <button onClick={() => dispatch({ type: 'INCREMENT' })}>Increment</button>
+        <button onClick={() => dispatch({ type: 'RESET' })}>Reset</button>
+      </div>
       
       {/* 创建新帖子 */}
       <div>

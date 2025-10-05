@@ -20,30 +20,43 @@ export interface PostsResponse {
   posts: Post[]
 }
 
-// 创建 API slice
-export const postsApi = createApi({
-  reducerPath: 'postsApi',
-  keepUnusedDataFor: 60, // 缓存时间是60秒
+// 创建主 API slice（只保留壳子）
+export const api = createApi({
+  reducerPath: 'api',
   baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:3000/api' }),
-  tagTypes: ['Post'],
+  tagTypes: ['Post'], // 在这里定义 tagTypes
+  endpoints: () => ({}), // 空的 endpoints
+})
+
+// 通过注入的方式添加所有 endpoints
+const enhancedApi = api.injectEndpoints({
+  // 移除了错误的 tagTypes 属性
   endpoints: (builder) => ({
     // 获取所有帖子
     getPosts: builder.query<Post[], void>({
       query: () => '/posts',
+      async onQueryStarted(args, { dispatch, getState , queryFulfilled ,getCacheEntry}) {
+        const { data } = await queryFulfilled;
+        console.log('🚀 >>> data',data)
+        console.log('🚀 >>> getCacheEntry()',getCacheEntry())
+        // return {
+        //   data: data,
+        // }
+      },
+      keepUnusedDataFor: 0,
       providesTags: (result) => {
         const res  =  result
           ? [
             ...result.map(({ id }) => ({ type: 'Post' as const, id })),
-            { type: 'Post', id: 'LIST' },
+            { type: 'Post' as const, id: 'LIST' },
           ]
-          : [{ type: 'Post', id: 'LIST' }]
+          : [{ type: 'Post' as const, id: 'LIST' }]
         return res
       }
-
     }),
     // 根据 ID 获取单个帖子
     getPost: builder.query<Post, number>({
-      query: (id) => `/posts/${id}`, // id变化时会自动发起请求
+      query: (id) => `/posts/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Post', id }],
     }),
     // 创建新帖子
@@ -75,12 +88,14 @@ export const postsApi = createApi({
   }),
 })
 
-export const selectPosts =(state:any)=> postsApi.endpoints.getPosts.select()(state)
+// 导出所有 hooks（从增强的 API 导出，它包含了所有 endpoints）
 export const {
   useGetPostsQuery,
   useGetPostQuery,
   useCreatePostMutation,
   useUpdatePostMutation,
   useDeletePostMutation,
-  useLazyGetPostQuery
-} = postsApi
+} = enhancedApi
+
+// 简化 selectPosts
+export const selectPosts = enhancedApi.endpoints.getPosts.select(undefined)
